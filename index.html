@@ -652,6 +652,13 @@ html{-webkit-tap-highlight-color:transparent}
   .hint3d{white-space:normal;width:86%;text-align:center}
 }
 
+.rooms3d{display:flex;gap:10px;padding:14px 0 4px;overflow-x:auto;scrollbar-width:none}
+.rooms3d::-webkit-scrollbar{display:none}
+.rooms3d a{display:flex;align-items:center;gap:10px;border:1px solid var(--line-2);border-radius:40px;padding:5px 16px 5px 5px;font-size:13px;font-weight:600;white-space:nowrap;background:var(--card);flex:0 0 auto}
+.rooms3d img{width:34px;height:34px;border-radius:50%;object-fit:cover}
+.rooms3d a.on{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+@media (max-width:860px){.rooms3d{margin:0 -16px;padding:10px 16px 2px}}
+
 </style>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1a18'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23faf8f4' font-family='Georgia'%3EB%3C/text%3E%3C/svg%3E">
 </head>
@@ -2135,7 +2142,7 @@ function pebbles(o){const{pw,ph,ppm,base,colors,seed=13,r=.022}=o;const W=Math.r
 
 function capsules(o){const{pw,ph,tw,th,ppm,color,grout,seed=15}=o;const W=Math.round(pw*ppm),H=Math.round(ph*ppm),c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');const R=rng(seed);
  x.fillStyle=grout;x.fillRect(0,0,W,H);const TW=tw*ppm,TH=th*ppm,g=.004*ppm;
- for(let r=0;r<Math.round(ph/th);r++)for(let k=0;k<Math.round(pw/tw);k++){const X=k*TW+g/2,Y=r*TH+g/2,w=TW-g,h=TH-g;const gr=x.createLinearGradient(X,0,X+w,0);const cl=jitter(color,.1,R);gr.addColorStop(0,shade(cl,.82));gr.addColorStop(.3,shade(cl,1.12));gr.addColorStop(1,shade(cl,.78));x.fillStyle=gr;x.beginPath();x.roundRect(X,Y,w,h,w/2);x.fill()}
+ for(let r=0;r<Math.round(ph/th);r++)for(let k=0;k<Math.round(pw/tw);k++){const X=k*TW+g/2,Y=r*TH+g/2,w=TW-g,h=TH-g;const gr=x.createLinearGradient(X,0,X+w,0);const f=1+(R()-.5)*.1;gr.addColorStop(0,shade(color,.82*f));gr.addColorStop(.3,shade(color,Math.min(1.25,1.12*f)));gr.addColorStop(1,shade(color,.78*f));x.fillStyle=gr;x.beginPath();x.roundRect(X,Y,w,h,w/2);x.fill()}
  return{c,pw,ph}}
 
 function ladrilho(o){const{s,ppm,base,line}=o;const pw=s*2,ph=s*2;const W=Math.round(pw*ppm),H=W,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
@@ -2232,7 +2239,7 @@ function simPage(key,qs){const sc=SCENES[key];SIM.scene=key;SIM.sel={};SIM.brand
  <div class="simhead"><div><span class="eyebrow">Simulador · ${sc.by}</span><h1>${sc.t}</h1></div>
   <div class="scenes">${Object.entries(SCENES).map(([k,s])=>`<a href="#/sim/${k}" class="${k===key?'on':''}" title="${s.t}"><img src="${I(s.img)}" alt=""><span>${s.t.split(' ')[0]}</span></a>`).join('')}</div></div>
  <div class="simgrid"><div class="simstage rel"><div class="cmp" id="cmp"><canvas id="simCanvas"></canvas><div class="orig" id="orig"><img src="${I(sc.img)}" alt=""></div><div class="handle" id="hdl"><span>‹ ›</span></div><input type="range" min="0" max="100" value="0" id="cmpR" oninput="cmp(this.value)" aria-label="Comparar antes e depois"></div>
-   <div class="simbar"><span id="simStatus">Arraste para comparar com a foto original</span><span style="display:flex;gap:16px"><button class="link" onclick="cmp(50,1)">Antes e depois</button><a class="link" href="#/sim3d">Ver em 3D</a></span></div>
+   <div class="simbar"><span id="simStatus">Arraste para comparar com a foto original</span><span style="display:flex;gap:16px"><button class="link" onclick="cmp(50,1)">Antes e depois</button><a class="link" href="#/sim3d/${key}">Ver em 3D</a></span></div>
    ${note(8,'Simulador','O cliente troca parede, piso, teto e muro com produtos reais do catálogo. Cada escolha já gera quantidade e preço.','top:12px;left:12px')}</div>
   <aside class="proj"><span class="eyebrow">Seu projeto</span><h3>Lista do ambiente</h3><div id="projList"></div>
    <div class="ptot"><span>Total estimado</span><b id="projTot">R$ 0,00</b></div><small class="pnote">Quantidades com 10% de margem de perda. O consultor confirma medidas antes do pedido.</small>
@@ -2260,7 +2267,7 @@ function projToCart(){const L=projLines();if(!L.length)return toast('Escolha ao 
 function projToSeller(){const L=projLines();if(!L.length)return toast('Escolha ao menos um produto');toast('Abriria o WhatsApp do vendedor com o projeto e o link (simulação)')}
 function projShare(){const q=Object.keys(SCENES[SIM.scene].surf).map(k=>SIM.sel[k]?`${k}=${SIM.sel[k].id}:${SIM.sel[k].c}`:`${k}=original`).join('&');const url=location.href.split('#')[0]+`#/sim/${SIM.scene}?${q}`;navigator.clipboard?.writeText(url).catch(()=>{});toast('Link do projeto copiado')}
 function sceneFor(id){const s=SURF[id]||[];for(const[k,sc]of Object.entries(SCENES))for(const su of Object.keys(sc.surf))if(s.includes(su))return[k,su];return null}
-function simCards(){return `<div class="scgrid"><a class="card" href="#/sim3d"><div class="ph" style="aspect-ratio:4/5"><img src="${I(23)}" alt=""><span class="tag clay">Novo · 3D</span><span class="qa">Abrir em 3D</span></div><div class="meta"><div class="br">Parede · Piso · Teto · Cuba</div><h3 style="font-family:var(--serif);font-size:23px;font-weight:500">Banheiro em 3D</h3></div></a>${Object.entries(SCENES).map(([k,s])=>`<a class="card" href="#/sim/${k}"><div class="ph" style="aspect-ratio:4/5"><img src="${I(s.img)}" alt=""><span class="tag clay">Personalizável</span><span class="qa">Montar este ambiente</span></div><div class="meta"><div class="br">${Object.keys(s.surf).map(x=>SURF_LBL[x]).join(' · ')}</div><h3 style="font-family:var(--serif);font-size:23px;font-weight:500">${s.t}</h3></div></a>`).join('')}</div>`}
+function simCards(){return `<div class="scgrid">${Object.entries(SCENES).map(([k,s])=>`<a class="card" href="#/sim/${k}"><div class="ph" style="aspect-ratio:4/5"><img src="${I(s.img)}" alt=""><span class="tag clay">Personalizável</span><span class="qa">Montar este ambiente</span></div><div class="meta"><div class="br">${Object.keys(s.surf).map(x=>SURF_LBL[x]).join(' · ')}</div><h3 style="font-family:var(--serif);font-size:23px;font-weight:500">${s.t}</h3></div></a>`).join('')}</div>`}
 
 const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const unitLbl = u => u==='m2'?'/m²':u==='ml'?'/metro':'/un';
@@ -2385,7 +2392,7 @@ function closeFilters(){const f=$('#filters');if(f)f.classList.remove('open');co
 function brandsPage(){return `<div class="wrap"><div class="crumbs"><a href="#/">Início</a> / Marcas</div><div class="chead"><div><span class="eyebrow">Marcas</span><h1>Compre por marca</h1></div><p>Cada marca tem página própria com história, linhas e todos os produtos disponíveis na Barotti.</p></div>
  <div class="grid" style="padding:40px 0 90px">${Object.entries(BRANDS).filter(([k])=>k!=='santaluzia').map(([k,b])=>`<a class="card" href="#/m/${k}"><div class="ph" style="aspect-ratio:1"><img src="${I(b.img)}" alt=""></div><div class="meta"><div class="br">${P.filter(p=>p.b===k).length} produtos</div><h3 style="font-family:var(--serif);font-size:26px;font-weight:500">${b.n}</h3><div class="spec">${b.d.split('.')[0]}.</div></div></a>`).join('')}</div></div>`}
 
-function ambPage(){return `<div class="wrap"><div class="crumbs"><a href="#/">Início</a> / Ambientes</div><div class="chead"><div><span class="eyebrow">Simulador</span><h1>Monte seu ambiente</h1></div><p>Escolha um ambiente, troque parede, piso, teto ou muro pelos produtos do catálogo e veja o resultado na hora. No final, compre online ou envie o projeto para um vendedor.</p></div><div style="padding:40px 0 20px">${simCards()}</div><div class="shead" style="margin-top:50px"><div><span class="eyebrow">Inspiração</span><h2>Projetos de parceiros</h2></div><p>Na versão final, cada foto terá os produtos marcados para compra direta.</p></div>
+function ambPage(){return `<div class="wrap"><div class="crumbs"><a href="#/">Início</a> / Ambientes</div><div class="chead"><div><span class="eyebrow">Simulador</span><h1>Monte seu ambiente</h1></div><p>Escolha um ambiente, troque parede, piso, teto ou muro pelos produtos do catálogo e veja o resultado na hora. No final, compre online ou envie o projeto para um vendedor.</p></div><div class="shead" style="margin:40px 0 18px"><div><span class="eyebrow">Novo</span><h2>Ambientes em 3D</h2></div><p>Gire, aproxime e troque parede, piso, teto, bancada e piscina com os produtos do catálogo.</p></div>${sim3Cards()}<div class="shead" style="margin:56px 0 18px"><div><span class="eyebrow">Fotos reais</span><h2>Ambientes em foto</h2></div><p>Projetos de parceiros com troca de superfícies sobre a foto.</p></div>${simCards()}<div class="shead" style="margin-top:50px"><div><span class="eyebrow">Inspiração</span><h2>Projetos de parceiros</h2></div><p>Na versão final, cada foto terá os produtos marcados para compra direta.</p></div>
  <div class="grid" style="grid-template-columns:repeat(3,1fr);padding:0 0 90px">${[...AMBIENTES,{t:'Cabeceira em relevo',by:'Projeto @meet.arquitetura',img:8},{t:'Quarto infantil',by:'Projeto @meet.arquitetura',img:16},{t:'Pé-direito duplo',by:'Projeto @leoshehtman',img:21},{t:'Spa em casa',by:'Banheira Sabbia',img:23}].map(a=>`<div class="card"><div class="ph"><img src="${I(a.img)}" alt=""></div><div class="meta"><div class="br">${a.by}</div><h3 style="font-family:var(--serif);font-size:24px;font-weight:500">${a.t}</h3></div></div>`).join('')}</div></div>`}
 
 function proPage(){return `<div class="wrap"><div class="crumbs"><a href="#/">Início</a> / Profissionais</div></div>${proBlock()}<section class="blk"><div class="wrap" style="max-width:640px"><span class="eyebrow">Cadastro</span><h2 style="font-size:44px;margin:10px 0 24px">Solicite seu acesso profissional</h2>
@@ -2458,7 +2465,7 @@ function route(){const h=location.hash.slice(1)||'/';const [path,q]=h.split('?')
  else if(seg[0]==='categorias')app.innerHTML=catsPage();
  else if(seg[0]==='marcas')app.innerHTML=brandsPage();
  else if(seg[0]==='ambientes')app.innerHTML=ambPage();
- else if(seg[0]==='sim3d'){app.innerHTML=sim3Page(qs);sim3Init();document.body.classList.add('has-proj')}
+ else if(seg[0]==='sim3d'){app.innerHTML=sim3Page(seg[1]||'banheiro',qs);sim3Init();document.body.classList.add('has-proj')}
  else if(seg[0]==='sim'&&SCENES[seg[1]]){app.innerHTML=simPage(seg[1],qs);simInit();document.body.classList.add('has-proj')}
  else if(seg[0]==='profissionais')app.innerHTML=proPage();
  else if(seg[0]==='showroom')app.innerHTML=showPage();
@@ -2474,135 +2481,211 @@ function toggleTheme(){const r=document.documentElement;const d=r.dataset.theme=
 $('#fcats').innerHTML=Object.entries(CATS).map(([k,c])=>`<li><a href="#/c/${k}">${c.n}</a></li>`).join('');
 
 
-/* ================= BANHEIRO 3D (Three.js) ================= */
-SURF_LBL.destaque='Parede de destaque';SURF_LBL.paredes='Demais paredes';SURF_LBL.cuba='Cuba';
-SURF_ICON.destaque=SURF_ICON.parede;SURF_ICON.paredes='<path d="M3 20V6l6-2v16M9 4l6 2v14M15 6l6-2v16"/>';SURF_ICON.cuba='<path d="M3 11h18a9 6 0 0 1-18 0zM10 11V7a2 2 0 0 1 4 0"/>';
-const R3={W:3.0,D:2.6,H:2.7};
-const SIM3={on:false,surf:'destaque',brand:null,sel:{},objs:{},raf:0,
- areas:{piso:7.8,destaque:8.1,paredes:15,teto:7.8,cuba:1},
- surfs:['destaque','paredes','piso','teto','cuba'],
- compat:k=>k==='cuba'?P.filter(p=>p.c==='loucas'):P.filter(p=>(SURF[p.id]||[]).includes(k==='destaque'||k==='paredes'?'parede':k)),
- def:{destaque:{id:'solos-cotto',c:0},piso:{id:'terrazzo-donata',c:0},cuba:{id:'cuba-konkre-artesanal',c:1}}};
+/* ================= AMBIENTES 3D (Three.js) ================= */
+Object.assign(SURF_LBL,{destaque:'Parede de destaque',paredes:'Demais paredes',cuba:'Cuba',bancada:'Bancada',piscina:'Piscina'});
+Object.assign(SURF_ICON,{destaque:SURF_ICON.parede,paredes:'<path d="M3 20V6l6-2v16M9 4l6 2v14M15 6l6-2v16"/>',cuba:'<path d="M3 11h18a9 6 0 0 1-18 0zM10 11V7a2 2 0 0 1 4 0"/>',bancada:'<path d="M2 9h20v3H2zM4 12v8M20 12v8M8 12v5h8v-5"/>',piscina:'<path d="M2 16c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 6 0M2 20c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 6 0M7 14V5a2 2 0 0 1 4 0M13 14V5a2 2 0 0 1 4 0M7 9h6"/>'});
+const LIST3={bancada:['porcelanato-carrara-portinari','terrazzo-donata','iseo-marfim','granitte'],piscina:['pedra-hijau','portinari-capsula','revestimento-roca','color-mind','ladrilho-hidraulico']};
+const MAP3={destaque:'parede',paredes:'parede',piso:'piso',teto:'teto',muro:'muro',piso_ext:'piso_ext'};
+function compat3(k){if(k==='cuba')return P.filter(p=>p.c==='loucas');if(LIST3[k])return LIST3[k].map(byId);return P.filter(p=>(SURF[p.id]||[]).includes(MAP3[k]))}
+const BASE3={cuba:['Cuba branca','Louça padrão',0xf4f3f0],piscina:['Azulejo branco','Padrão',0xe6eef0],bancada:['Laca branca','Padrão',0xf1efeb],teto:['Pintura lisa','Sem revestimento',0xe9e6e0],piso_ext:['Cimento','Sem revestimento',0xc9c2b6],muro:['Pintura lisa','Sem revestimento',0xe2dcd2]};
+const base3=k=>BASE3[k]||['Pintura lisa','Sem revestimento',0xd9d3ca];
 
-function sim3Page(qs){SIM3.on=true;SIM3.sel=JSON.parse(JSON.stringify(SIM3.def));SIM3.brand=null;SIM3.surf=qs.get('s')&&SIM3.surfs.includes(qs.get('s'))?qs.get('s'):'destaque';
- for(const k of SIM3.surfs){const v=qs.get(k);if(v){if(v==='original')delete SIM3.sel[k];else{const[id,c]=v.split(':');if(byId(id))SIM3.sel[k]={id,c:+c||0}}}}
- return `<div class="wrap"><div class="crumbs"><a href="#/">Início</a> / <a href="#/ambientes">Ambientes</a> / Banheiro 3D</div>
- <div class="simhead"><div><span class="eyebrow">Simulador 3D · gire, aproxime e troque</span><h1>Banheiro em 3D</h1></div>
-  <div class="views3d"><button onclick="cam3('entrada')">Entrada</button><button onclick="cam3('banheira')">Banheira</button><button onclick="cam3('bancada')">Bancada</button><button onclick="cam3('teto')">Teto</button></div></div>
+const ROOMS={
+ banheiro:{t:'Banheiro',h1:'Banheiro em 3D',img:23,photo:'banheiro',W:3.0,D:2.6,H:2.7,dim:'3,0 x 2,6 m, pé-direito de 2,7 m',
+  surfs:['destaque','paredes','piso','teto','cuba'],areas:{piso:7.8,destaque:8.1,paredes:15,teto:7.8,cuba:1},
+  def:{destaque:{id:'solos-cotto',c:0},piso:{id:'terrazzo-donata',c:0},cuba:{id:'cuba-konkre-artesanal',c:1}},
+  cams:{Entrada:[[2.2,1.6,2.48],[1.0,.85,.35]],Banheira:[[1.95,1.35,1.95],[1.05,.5,.5]],Bancada:[[1.2,1.45,1.6],[2.85,1.1,1.55]],Teto:[[1.5,.9,1.8],[1.5,2.6,.9]]},maxD:2.3},
+ sala:{t:'Sala',h1:'Sala de estar em 3D',img:21,photo:'sala',W:5.2,D:4.4,H:3.0,dim:'5,2 x 4,4 m, pé-direito de 3,0 m',
+  surfs:['destaque','paredes','piso','teto'],areas:{destaque:15.6,paredes:39,piso:22.9,teto:22.9},
+  def:{destaque:{id:'ripas-concreto',c:0},piso:{id:'porcelanato-carrara-portinari',c:0}},
+  cams:{Geral:[[4.85,1.75,4.25],[2.3,.7,2.2]],'Parede da TV':[[2.6,1.45,3.1],[2.6,1.3,0]],Sofá:[[2.6,1.55,.9],[2.6,.6,3.6]],Teto:[[2.6,1.0,3.4],[2.6,3.0,1.4]]},maxD:4},
+ quarto:{t:'Quarto',h1:'Quarto em 3D',img:22,photo:'quarto',W:4.0,D:3.8,H:2.7,dim:'4,0 x 3,8 m, pé-direito de 2,7 m',
+  surfs:['destaque','paredes','piso','teto'],areas:{destaque:10.8,paredes:30,piso:15.2,teto:15.2},
+  def:{destaque:{id:'revestimento-3d-madeira',c:0},piso:{id:'vinilico-tarkett',c:0}},
+  cams:{Geral:[[3.55,1.6,3.5],[1.6,.9,.5]],Cama:[[2.0,1.35,3.4],[2.0,.8,.6]],Cabeceira:[[2.0,1.35,2.3],[2.0,1.45,0]],Teto:[[2.0,.9,3.1],[2.0,2.6,1.2]]},maxD:3.5},
+ cozinha:{t:'Cozinha',h1:'Cozinha em 3D',img:26,photo:'cozinha',W:4.2,D:3.6,H:2.8,dim:'4,2 x 3,6 m, pé-direito de 2,8 m',
+  surfs:['destaque','bancada','piso','paredes','teto'],areas:{destaque:2.2,bancada:4.3,piso:15.1,paredes:24,teto:15.1},
+  def:{destaque:{id:'portinari-capsula',c:0},piso:{id:'iseo-marfim',c:0},bancada:{id:'terrazzo-donata',c:0}},
+  cams:{Geral:[[3.95,1.75,3.35],[1.6,1.0,.6]],Bancada:[[1.9,1.55,1.6],[1.9,1.25,0]],Ilha:[[3.7,1.65,3.35],[2.0,.85,2.0]],Piso:[[3.7,2.4,3.35],[1.8,0,1.3]]},maxD:3.5},
+ externa:{t:'Lazer',h1:'Área de lazer em 3D',img:11,photo:'externa',W:12,D:10,H:6,out:1,dim:'terreno de 12 x 10 m com piscina de 6 x 3 m',
+  surfs:['piso_ext','piscina','muro'],areas:{piso_ext:102,piscina:41,muro:53},
+  def:{piso_ext:{id:'granitte',c:0},piscina:{id:'pedra-hijau',c:0},muro:{id:'ecobrick-stone',c:0}},
+  cams:{Geral:[[11,3.3,9.6],[5.5,0,3.6]],Piscina:[[6,2.7,8.9],[6,-.6,5]],Muro:[[6,1.7,6.9],[6,1.2,0]],Deck:[[1.4,1.8,9.2],[6,0,5]]},maxD:10}
+};
+const SIM3={on:false,room:'banheiro',surf:null,brand:null,sel:{},objs:{}};
+const R3o=()=>ROOMS[SIM3.room];
+
+function sim3Page(room,qs){if(!ROOMS[room])room='banheiro';const R=ROOMS[room];SIM3.on=true;SIM3.room=room;SIM3.sel=JSON.parse(JSON.stringify(R.def));SIM3.brand=null;
+ SIM3.surf=qs.get('s')&&R.surfs.includes(qs.get('s'))?qs.get('s'):R.surfs[0];
+ for(const k of R.surfs){const v=qs.get(k);if(v){if(v==='original')delete SIM3.sel[k];else{const[id,c]=v.split(':');if(byId(id))SIM3.sel[k]={id,c:+c||0}}}}
+ return `<div class="wrap"><div class="crumbs"><a href="#/">Início</a> / <a href="#/ambientes">Ambientes</a> / ${R.h1}</div>
+ <div class="rooms3d">${Object.entries(ROOMS).map(([k,r])=>`<a href="#/sim3d/${k}" class="${k===room?'on':''}"><img src="${I(r.img)}" alt=""><span>${r.t}</span></a>`).join('')}</div>
+ <div class="simhead"><div><span class="eyebrow">Simulador 3D · gire, aproxime e troque</span><h1>${R.h1}</h1></div>
+  <div class="views3d">${Object.keys(R.cams).map(n=>`<button onclick="cam3('${n}')">${n}</button>`).join('')}</div></div>
  <div class="simgrid"><div class="simstage rel"><div class="stage3d" id="stage3d"><div class="load3d" id="load3d">Montando o ambiente 3D...</div><div class="hint3d" id="hint3d">Arraste para girar · pinça ou scroll para aproximar · toque numa superfície para trocar</div></div>
-   <div class="simbar"><span id="simStatus">Toque numa parede, no piso ou na cuba para escolher</span><a class="link" href="#/sim/banheiro">Ver em foto</a></div>
-   ${note(10,'Ambiente 3D','A troca é exata porque cada superfície é um objeto separado, com escala real das peças. Em produção, os móveis e louças viriam de modelos 3D profissionais.','top:12px;left:12px')}</div>
-  <aside class="proj"><span class="eyebrow">Seu projeto</span><h3>Lista do banheiro</h3><div id="projList"></div>
-   <div class="ptot"><span>Total estimado</span><b id="projTot">R$ 0,00</b></div><small class="pnote">Áreas de um banheiro de 3,0 x 2,6 m com pé-direito de 2,7 m. Quantidades com 10% de margem de perda.</small>
+   <div class="simbar"><span id="simStatus">Toque numa superfície para escolher o revestimento</span><a class="link" href="#/sim/${R.photo}">Ver em foto</a></div>
+   ${note(10,'Ambiente 3D','A troca é exata porque cada superfície é um objeto separado, com escala real das peças. Em produção, móveis e louças viriam de modelos 3D profissionais.','top:12px;left:12px')}</div>
+  <aside class="proj"><span class="eyebrow">Seu projeto</span><h3>Lista do ambiente</h3><div id="projList"></div>
+   <div class="ptot"><span>Total estimado</span><b id="projTot">R$ 0,00</b></div><small class="pnote">Áreas de referência: ${R.dim}. Quantidades com 10% de margem de perda.</small>
    <button class="btn dark block" onclick="projToCart()">Comprar tudo online</button>
    <button class="btn ghost block" style="margin-top:8px" onclick="projToSeller()">Continuar com um vendedor</button>
    <button class="link" style="margin-top:14px;font-size:11px" onclick="projShare()">Copiar link do projeto</button></aside></div>
  <div class="projbar" id="projbar"><div class="pbh"><button class="tg" onclick="$('#projbar').classList.toggle('open')" aria-label="Ver lista"><svg class="icon" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button><div><small id="pbn">Seu projeto</small><b id="pbt">R$ 0,00</b></div><button class="btn dark" onclick="projToCart()">Comprar</button></div><div class="pbb"><div id="projList2"></div><button class="btn ghost block" style="margin-top:12px" onclick="projToSeller()">Continuar com um vendedor</button><button class="link" style="margin-top:12px;font-size:11px" onclick="projShare()">Copiar link do projeto</button></div></div>
  <div class="simctl"><div class="stabs" id="stabs"></div><div class="sbrands" id="sbrands"></div><div class="sprods" id="sprods"></div></div></div>`}
 
-function drawCtl3(){const k=SIM3.surf;
- $('#stabs').innerHTML=SIM3.surfs.map(s=>{const v=SIM3.sel[s];return `<button class="${s===k?'on':''}" onclick="SIM3.surf='${s}';SIM3.brand=null;drawCtl3();flash3('${s}')"><svg class="icon" viewBox="0 0 24 24">${SURF_ICON[s]}</svg><span><b>${SURF_LBL[s]}</b><small>${v?byId(v.id).n:(s==='cuba'?'Cuba branca':'Pintura lisa')}</small></span></button>`}).join('');
- const list=SIM3.compat(k);const brands=[...new Set(list.map(p=>p.b))];
+function drawCtl3(){const R=R3o(),k=SIM3.surf;
+ $('#stabs').innerHTML=R.surfs.map(s=>{const v=SIM3.sel[s];return `<button class="${s===k?'on':''}" onclick="SIM3.surf='${s}';SIM3.brand=null;drawCtl3();flash3('${s}')"><svg class="icon" viewBox="0 0 24 24">${SURF_ICON[s]}</svg><span><b>${SURF_LBL[s]}</b><small>${v?byId(v.id).n:base3(s)[0]}</small></span></button>`}).join('');
+ const list=compat3(k);const brands=[...new Set(list.map(p=>p.b))];
  $('#sbrands').innerHTML=`<span class="eyebrow" style="margin-right:6px">Marca</span><button class="${!SIM3.brand?'on':''}" onclick="SIM3.brand=null;drawCtl3()">Todas</button>`+brands.map(b=>`<button class="${SIM3.brand===b?'on':''}" onclick="SIM3.brand='${b}';drawCtl3()">${BRANDS[b].n}</button>`).join('');
- const cur=SIM3.sel[k];const base=k==='cuba'?['Cuba branca','Louça padrão']:['Pintura lisa','Sem revestimento'];
- $('#sprods').innerHTML=`<button class="sp ${!cur?'on':''}" onclick="pick3(null)"><div class="sw0" style="background:${k==='cuba'?'#f2f2f0':'#e9e5df'}"></div><b>${base[0]}</b><small>${base[1]}</small></button>`+
+ const cur=SIM3.sel[k];const B=base3(k);
+ $('#sprods').innerHTML=`<button class="sp ${!cur?'on':''}" onclick="pick3(null)"><div class="sw0" style="background:#${B[2].toString(16).padStart(6,'0')}"></div><b>${B[0]}</b><small>${B[1]}</small></button>`+
   list.filter(p=>!SIM3.brand||p.b===SIM3.brand).map(p=>{const on=cur&&cur.id===p.id;const ci=on?cur.c:(k==='cuba'?1:0);return `<div class="sp ${on?'on':''}"><button onclick="pick3('${p.id}',${ci})"><div class="sw0"><img src="${k==='cuba'?I(p.img[0]):swatchURL(p.id,ci)}" alt="">${k==='cuba'?'':`<img class="ph2" src="${I(p.img[0])}" alt="">`}</div><small>${BRANDS[p.b].n}</small><b>${p.n}</b><small>${fmt(p.p)}${unitLbl(p.u)}</small></button>${on&&p.cores.length>1?`<div class="spc">${p.cores.map((c,i)=>`<i style="background:${c[1]}" class="${i===cur.c?'on':''}" title="${c[0]}" onclick="pick3('${p.id}',${i})"></i>`).join('')}</div>`:''}<a href="#/p/${p.id}" class="spl">Ver produto</a></div>`}).join('')}
 function pick3(id,c=0){if(id)SIM3.sel[SIM3.surf]={id,c};else delete SIM3.sel[SIM3.surf];apply3(SIM3.surf);drawCtl3();renderSummary()}
 
-function sim3Lines(){return SIM3.surfs.filter(k=>SIM3.sel[k]).map(k=>{const s=SIM3.sel[k],p=byId(s.id),area=SIM3.areas[k];if(p.u!=='m2')return{k,p,c:s.c,area:1,cx:1,tot:p.p,un:1};const cx=Math.ceil(area*1.1/p.cx);return{k,p,c:s.c,area,cx,tot:cx*p.cx*p.p}})}
+function sim3Lines(){const R=R3o();return R.surfs.filter(k=>SIM3.sel[k]).map(k=>{const s=SIM3.sel[k],p=byId(s.id),area=R.areas[k];if(p.u!=='m2')return{k,p,c:s.c,area:1,cx:1,tot:p.p,un:1};const cx=Math.ceil(area*1.1/p.cx);return{k,p,c:s.c,area,cx,tot:cx*p.cx*p.p}})}
 const _projLines=projLines;projLines=function(){return SIM3.on?sim3Lines():_projLines()};
 const _renderSummary=renderSummary;renderSummary=function(){if(!SIM3.on)return _renderSummary();const L=sim3Lines();
  const html=L.length?L.map(l=>`<div class="pl"><img src="${l.un?I(l.p.img[0]):swatchURL(l.p.id,l.c)}" alt=""><div><small>${SURF_LBL[l.k]}${l.un?'':` · ~${l.area} m²`}</small><b>${l.p.n}</b><small>${BRANDS[l.p.b].n} · ${l.p.cores[l.c][0]} · ${l.un?'1 un':l.cx+' cx'}</small></div><b>${fmt(l.tot)}</b></div>`).join(''):'<p class="pnote" style="padding:14px 0">Escolha um produto abaixo para começar.</p>';
  $('#projList').innerHTML=html;if($('#projList2'))$('#projList2').innerHTML=html;const tot=fmt(L.reduce((s,l)=>s+l.tot,0));$('#projTot').textContent=tot;if($('#pbt')){$('#pbt').textContent=tot;$('#pbn').textContent=L.length?`${L.length} ${L.length>1?'itens':'item'} no projeto`:'Seu projeto'}};
-const _projShare=projShare;projShare=function(){if(!SIM3.on)return _projShare();const q=SIM3.surfs.map(k=>SIM3.sel[k]?`${k}=${SIM3.sel[k].id}:${SIM3.sel[k].c}`:`${k}=original`).join('&');const url=location.href.split('#')[0]+`#/sim3d?${q}`;navigator.clipboard?.writeText(url).catch(()=>{});toast('Link do projeto copiado')};
+const _projShare=projShare;projShare=function(){if(!SIM3.on)return _projShare();const q=R3o().surfs.map(k=>SIM3.sel[k]?`${k}=${SIM3.sel[k].id}:${SIM3.sel[k].c}`:`${k}=original`).join('&');const url=location.href.split('#')[0]+`#/sim3d/${SIM3.room}?${q}`;navigator.clipboard?.writeText(url).catch(()=>{});toast('Link do projeto copiado')};
 
-/* ---------- cena ---------- */
+/* ---------- materiais e superfícies ---------- */
 let T3=null;
-function texFor(id,ci,w,h){const t=getTex(id,ci);const tx=new THREE.CanvasTexture(t.c);tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(w/t.pw,h/t.ph);tx.encoding=THREE.sRGBEncoding;tx.anisotropy=8;return tx}
-const ROUGH={'porcelanato-carrara-portinari':.22,'iseo-marfim':.4,'color-mind':.3,'kroma-hex-velvet':.55,'revestimento-roca':.35,'portinari-capsula':.45,'seixo-polido':.3};
-function surfMat(k,w,h){const s=SIM3.sel[k];if(!s)return new THREE.MeshStandardMaterial({color:k==='teto'?0xe9e6e0:0xd9d3ca,roughness:.92,envMapIntensity:.3});
- const map=texFor(s.id,s.c,w,h);const bump=map.clone();bump.needsUpdate=true;bump.encoding=THREE.LinearEncoding;
+function texFor(id,ci,rx,ry){const t=getTex(id,ci);const tx=new THREE.CanvasTexture(t.c);tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(rx/t.pw,ry/t.ph);tx.encoding=THREE.sRGBEncoding;tx.anisotropy=8;return tx}
+const ROUGH={'porcelanato-carrara-portinari':.2,'iseo-marfim':.4,'color-mind':.3,'kroma-hex-velvet':.55,'revestimento-roca':.35,'portinari-capsula':.4,'seixo-polido':.3,'terrazzo-donata':.45};
+function surfMat(k,ud){const s=SIM3.sel[k];if(!s)return new THREE.MeshStandardMaterial({color:base3(k)[2],roughness:k==='bancada'?.3:.92,envMapIntensity:.3});
+ const rx=ud.uvm?1:ud.w,ry=ud.uvm?1:ud.h;const map=texFor(s.id,s.c,rx,ry);const bump=map.clone();bump.needsUpdate=true;bump.encoding=THREE.LinearEncoding;
  return new THREE.MeshStandardMaterial({map,bumpMap:bump,bumpScale:.012,roughness:ROUGH[s.id]??.82,metalness:0,envMapIntensity:.35})}
 function apply3(k){if(!T3)return;const O=SIM3.objs;
- if(k==='cuba'){const s=SIM3.sel.cuba;const col=s?byId(s.id).cores[s.c][1]:'#f4f3f0';O.cuba.material.color.set(col);O.cuba.material.roughness=s?.85:.15;O.cuba.material.clearcoat=s?0:.6;O.cuba.material.needsUpdate=true;T3.dirty=1;return}
- (O[k]||[]).forEach(m=>{m.material.dispose?.();m.material=surfMat(k,m.userData.w,m.userData.h)});T3.dirty=1}
-function flash3(k){if(!T3)return;const tgt=k==='cuba'?[SIM3.objs.cuba]:(SIM3.objs[k]||[]);tgt.forEach(m=>{const e=m.material.emissive;if(!e)return;e.setRGB(.25,.2,.15);T3.dirty=1;setTimeout(()=>{e.setRGB(0,0,0);T3.dirty=1},350)})}
+ if(k==='cuba'){if(!O.cuba)return;const s=SIM3.sel.cuba;const col=s?byId(s.id).cores[s.c][1]:'#f4f3f0';O.cuba.material.color.set(col);O.cuba.material.roughness=s?.85:.15;O.cuba.material.clearcoat=s?0:.6;O.cuba.material.needsUpdate=true;T3.dirty=1;return}
+ (O[k]||[]).forEach(m=>{m.material.dispose?.();m.material=surfMat(k,m.userData)});T3.dirty=1}
+function flash3(k){if(!T3)return;const tgt=k==='cuba'?[SIM3.objs.cuba].filter(Boolean):(SIM3.objs[k]||[]);tgt.forEach(m=>{const e=m.material.emissive;if(!e)return;e.setRGB(.25,.2,.15);T3.dirty=1;setTimeout(()=>{e.setRGB(0,0,0);T3.dirty=1},350)})}
 
 function sim3Init(){const box=$('#stage3d');if(!box||!window.THREE){if(box)$('#load3d').textContent='Não foi possível carregar o 3D neste navegador.';return}
- drawCtl3();renderSummary();
- loadPhotoTex().then(()=>{if(!$('#stage3d'))return;build3(box);drawCtl3()})}
+ drawCtl3();renderSummary();loadPhotoTex().then(()=>{if(!$('#stage3d'))return;build3(box);drawCtl3()})}
 
-function build3(box){const{W,D,H}=R3;const r=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
- r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputEncoding=THREE.sRGBEncoding;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=.82;r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;
- box.appendChild(r.domElement);const scene=new THREE.Scene();scene.background=new THREE.Color(0x1a1816);
- const pm=new THREE.PMREMGenerator(r);scene.environment=pm.fromScene(new THREE.RoomEnvironment(),.04).texture;scene.background=new THREE.Color(0x1a1816);
- const cam=new THREE.PerspectiveCamera(66,1,.05,30);
- const ctl=new THREE.OrbitControls(cam,r.domElement);ctl.enableDamping=true;ctl.dampingFactor=.08;ctl.enablePan=false;ctl.minDistance=.35;ctl.maxDistance=2.3;ctl.rotateSpeed=.55;ctl.zoomSpeed=.7;ctl.maxPolarAngle=Math.PI*.82;ctl.minPolarAngle=Math.PI*.12;
- const O=SIM3.objs={destaque:[],paredes:[],piso:[],teto:[]};
- const plane=(k,w,h,pos,rot)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial());m.position.set(...pos);m.rotation.set(...rot);m.receiveShadow=true;m.userData={k,w,h};O[k].push(m);scene.add(m);return m};
- plane('piso',W,D,[W/2,0,D/2],[-Math.PI/2,0,0]);
- plane('teto',W,D,[W/2,H,D/2],[Math.PI/2,0,0]);
- plane('destaque',W,H,[W/2,H/2,0],[0,0,0]);
- plane('paredes',D,H,[0,H/2,D/2],[0,Math.PI/2,0]);
- plane('paredes',D,H,[W,H/2,D/2],[0,-Math.PI/2,0]);
- plane('paredes',W,H,[W/2,H/2,D],[0,Math.PI,0]);
+/* ---------- construtores de cena ---------- */
+function kit(scene,O){
+ const M={white:new THREE.MeshPhysicalMaterial({color:0xefeeea,roughness:.18,clearcoat:.6,clearcoatRoughness:.2,envMapIntensity:.6}),
+  black:new THREE.MeshStandardMaterial({color:0x151515,roughness:.35,metalness:.8}),
+  wood:new THREE.MeshStandardMaterial({color:0x6a4529,roughness:.55,envMapIntensity:.4}),
+  woodL:new THREE.MeshStandardMaterial({color:0xa0784f,roughness:.6,envMapIntensity:.4}),
+  stone:new THREE.MeshStandardMaterial({color:0xe7e3dc,roughness:.35}),
+  fabric:new THREE.MeshStandardMaterial({color:0x8d877f,roughness:1,envMapIntensity:.2}),
+  fabricL:new THREE.MeshStandardMaterial({color:0xd8d2c8,roughness:1,envMapIntensity:.2}),
+  clay:new THREE.MeshStandardMaterial({color:0xa8694c,roughness:.95,envMapIntensity:.2}),
+  linen:new THREE.MeshStandardMaterial({color:0xf3f0ea,roughness:1,envMapIntensity:.2}),
+  rug:new THREE.MeshStandardMaterial({color:0xcfc4b3,roughness:1,envMapIntensity:.15}),
+  graphite:new THREE.MeshStandardMaterial({color:0x2c2c2e,roughness:.5,envMapIntensity:.4}),
+  steel:new THREE.MeshStandardMaterial({color:0xb9bcbf,roughness:.3,metalness:.9}),
+  glass:new THREE.MeshStandardMaterial({color:0xbcd3e2,emissive:0xcfe2ee,emissiveIntensity:.75,roughness:.1}),
+  pot:new THREE.MeshStandardMaterial({color:0xd8cfc2,roughness:.9}),leaf:new THREE.MeshStandardMaterial({color:0x3f5a38,roughness:.8}),
+  glow:new THREE.MeshStandardMaterial({color:0xfff2dc,emissive:0xffe2b0,emissiveIntensity:1.6})};
  const add=(g,mat,pos,cast=true)=>{const m=new THREE.Mesh(g,mat);m.position.set(...pos);m.castShadow=cast;m.receiveShadow=true;scene.add(m);return m};
- const white=new THREE.MeshPhysicalMaterial({color:0xefeeea,roughness:.18,clearcoat:.6,clearcoatRoughness:.2,envMapIntensity:.6});
- const black=new THREE.MeshStandardMaterial({color:0x151515,roughness:.35,metalness:.8});
- const wood=new THREE.MeshStandardMaterial({color:0x6a4529,roughness:.55,envMapIntensity:.4});
- const stone=new THREE.MeshStandardMaterial({color:0xe7e3dc,roughness:.35});
- // banheira freestanding
- const prof=[[0,.0],[.36,.0],[.43,.06],[.49,.42],[.5,.56],[.47,.57],[.45,.52],[.41,.2],[.34,.1],[0,.09]].map(([x,y])=>new THREE.Vector2(x,y));
- const tub=add(new THREE.LatheGeometry(prof,64),white,[1.12,0,.62]);tub.scale.set(1.7,1,.8);tub.material.side=THREE.DoubleSide;
- // misturador de piso
- add(new THREE.CylinderGeometry(.018,.018,1.0,16),black,[2.12,.5,.62]);
- const sp=add(new THREE.TorusGeometry(.11,.016,10,24,Math.PI),black,[2.01,1.0,.62]);sp.rotation.z=0;
- add(new THREE.CylinderGeometry(.045,.045,.02,20),black,[2.12,.01,.62]);
- // bancada suspensa na parede direita
- const vz=1.55;add(new THREE.BoxGeometry(.5,.38,1.3),wood,[W-.25,.62,vz]);
- add(new THREE.BoxGeometry(.54,.04,1.34),stone,[W-.27,.83,vz]);
- const bowl=[[0,0],[.16,0],[.2,.03],[.21,.13],[.195,.135],[.18,.035],[.15,.025],[0,.02]].map(([x,y])=>new THREE.Vector2(x,y));
- const cuba=add(new THREE.LatheGeometry(bowl,48),new THREE.MeshPhysicalMaterial({color:0xf4f3f0,roughness:.15,clearcoat:.6}),[W-.3,.85,vz]);cuba.scale.set(1.15,1,1.5);cuba.material.side=THREE.DoubleSide;SIM3.objs.cuba=cuba;
- const tap=add(new THREE.CylinderGeometry(.012,.012,.2,12),black,[W-.1,1.12,vz]);tap.rotation.z=Math.PI/2;
- // espelho com LED
- add(new THREE.BoxGeometry(.02,.8,1.0),new THREE.MeshStandardMaterial({color:0xfff2dc,emissive:0xffe2b0,emissiveIntensity:1.4}),[W-.012,1.6,vz],false);
- add(new THREE.BoxGeometry(.02,.76,.96),new THREE.MeshStandardMaterial({color:0xcfd4d6,metalness:1,roughness:.04}),[W-.03,1.6,vz],false);
- // fita de LED sob a bancada
- add(new THREE.BoxGeometry(.01,.01,1.25),new THREE.MeshStandardMaterial({emissive:0xffd9a0,emissiveIntensity:2}),[W-.45,.42,vz],false);
- // janela na parede esquerda
- add(new THREE.BoxGeometry(.02,.62,1.02),black,[.01,2.02,1.35],false);
- add(new THREE.BoxGeometry(.02,.56,.96),new THREE.MeshStandardMaterial({color:0xdfe8ee,emissive:0xe8f0f5,emissiveIntensity:1.2}),[.02,2.02,1.35],false);
- // argola e toalha
- const ring=add(new THREE.TorusGeometry(.16,.008,8,40),black,[.02,1.25,2.05]);ring.rotation.y=Math.PI/2;
- add(new THREE.BoxGeometry(.03,.4,.14),new THREE.MeshStandardMaterial({color:0xf2efe8,roughness:1}),[.035,1.05,2.05]);
- // banqueta de madeira e vaso com planta
- add(new THREE.BoxGeometry(.36,.42,.3),wood,[2.35,.21,.45]);
- add(new THREE.CylinderGeometry(.09,.07,.2,24),new THREE.MeshStandardMaterial({color:0xd8cfc2,roughness:.9}),[2.4,.52,.45]);
- const leaf=new THREE.MeshStandardMaterial({color:0x3f5a38,roughness:.8});for(let i=0;i<7;i++){const l=add(new THREE.ConeGeometry(.035,.35,6),leaf,[2.4+Math.cos(i)*.04,.75,.45+Math.sin(i)*.04]);l.rotation.set(Math.sin(i*2)*.5,0,Math.cos(i*3)*.5)}
- // luzes
- scene.add(new THREE.HemisphereLight(0xfff8ee,0x6f665c,.22));
- const sun=new THREE.DirectionalLight(0xfff1dc,1.15);sun.position.set(-2.2,3.6,1.5);sun.target.position.set(1.5,0,1.1);scene.add(sun.target);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);sun.shadow.camera.left=-2.5;sun.shadow.camera.right=2.5;sun.shadow.camera.top=2.5;sun.shadow.camera.bottom=-2.5;sun.shadow.bias=-.0006;sun.shadow.radius=5;scene.add(sun);
- const p1=new THREE.PointLight(0xffe6c4,.55,6,2);p1.position.set(1.5,H-.15,1.2);scene.add(p1);
- const p2=new THREE.PointLight(0xffd9a0,.45,2.2,2);p2.position.set(W-.4,1.6,vz);scene.add(p2);
- const p3=new THREE.PointLight(0xffe0b0,.3,3,2);p3.position.set(1.1,H-.2,.4);scene.add(p3);
+ const bx=(w,h,d,mat,x,y0,z,cast=true)=>add(new THREE.BoxGeometry(w,h,d),mat,[x,y0+h/2,z],cast);
+ const surf=(k,m,ud)=>{m.userData={k,...ud};m.receiveShadow=true;(O[k]=O[k]||[]).push(m);scene.add(m);return m};
+ const plane=(k,w,h,pos,rot)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial());m.position.set(...pos);m.rotation.set(...rot);return surf(k,m,{w,h})};
+ const sbox=(k,w,h,d,x,y0,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial());m.position.set(x,y0+h/2,z);m.castShadow=true;return surf(k,m,{w,h:d})};
+ const plant=(x,z,s=1)=>{add(new THREE.CylinderGeometry(.11*s,.08*s,.26*s,24),M.pot,[x,.13*s,z]);for(let i=0;i<9;i++){const l=add(new THREE.ConeGeometry(.04*s,.5*s,6),M.leaf,[x+Math.cos(i*.7)*.05*s,.45*s,z+Math.sin(i*.7)*.05*s]);l.rotation.set(Math.sin(i*2)*.5,0,Math.cos(i*3)*.5)}};
+ const windowL=(x,y,z,w,h,axis='x')=>{if(axis==='x'){bx(.03,h+.06,w+.06,M.black,x,y-.03,z,false);bx(.03,h,w,M.glass,x+.012,y,z,false)}else{bx(w+.06,h+.06,.03,M.black,x,y-.03,z,false);bx(w,h,.03,M.glass,x,y,z-.012,false)}};
+ const shell=(W,D,H,ceil=true)=>{plane('piso',W,D,[W/2,0,D/2],[-Math.PI/2,0,0]);if(ceil)plane('teto',W,D,[W/2,H,D/2],[Math.PI/2,0,0]);
+  plane('destaque',W,H,[W/2,H/2,0],[0,0,0]);plane('paredes',D,H,[0,H/2,D/2],[0,Math.PI/2,0]);plane('paredes',D,H,[W,H/2,D/2],[0,-Math.PI/2,0]);plane('paredes',W,H,[W/2,H/2,D],[0,Math.PI,0])};
+ const sun=(pos,tgt,I=1.15,ext=3)=>{const s=new THREE.DirectionalLight(0xfff1dc,I);s.position.set(...pos);s.target.position.set(...tgt);scene.add(s.target);s.castShadow=true;s.shadow.mapSize.set(1536,1536);Object.assign(s.shadow.camera,{left:-ext,right:ext,top:ext,bottom:-ext,far:40});s.shadow.bias=-.0006;s.shadow.radius=5;scene.add(s);return s};
+ const pt=(pos,I=.5,d=6,c=0xffe6c4)=>{const p=new THREE.PointLight(c,I,d,2);p.position.set(...pos);scene.add(p);return p};
+ const hemi=(I=.22,sky=0xfff8ee,gnd=0x6f665c)=>scene.add(new THREE.HemisphereLight(sky,gnd,I));
+ const lathe=(pts,mat,pos,seg=48)=>{const m=add(new THREE.LatheGeometry(pts.map(([x,y])=>new THREE.Vector2(x,y)),seg),mat,pos);m.material.side=THREE.DoubleSide;return m};
+ return{M,add,bx,surf,plane,sbox,plant,windowL,shell,sun,pt,hemi,lathe}}
+
+const BUILD={
+ banheiro(K,R){const{W,D,H}=R,M=K.M;K.shell(W,D,H);
+  const tub=K.lathe([[0,0],[.36,0],[.43,.06],[.49,.42],[.5,.56],[.47,.57],[.45,.52],[.41,.2],[.34,.1],[0,.09]],M.white,[1.12,0,.62],64);tub.scale.set(1.7,1,.8);
+  K.add(new THREE.CylinderGeometry(.018,.018,1.0,16),M.black,[2.12,.5,.62]);K.add(new THREE.TorusGeometry(.11,.016,10,24,Math.PI),M.black,[2.01,1.0,.62]);K.add(new THREE.CylinderGeometry(.045,.045,.02,20),M.black,[2.12,.01,.62]);
+  const vz=1.55;K.bx(.5,.38,1.3,M.wood,W-.25,.43,vz);K.bx(.54,.04,1.34,M.stone,W-.27,.81,vz);
+  const cuba=K.lathe([[0,0],[.16,0],[.2,.03],[.21,.13],[.195,.135],[.18,.035],[.15,.025],[0,.02]],new THREE.MeshPhysicalMaterial({color:0xf4f3f0,roughness:.15,clearcoat:.6}),[W-.3,.85,vz]);cuba.scale.set(1.15,1,1.5);SIM3.objs.cuba=cuba;
+  const tap=K.add(new THREE.CylinderGeometry(.012,.012,.2,12),M.black,[W-.1,1.12,vz]);tap.rotation.z=Math.PI/2;
+  K.bx(.02,.8,1.0,M.glow,W-.012,1.2,vz,false);K.bx(.02,.76,.96,new THREE.MeshStandardMaterial({color:0xcfd4d6,metalness:1,roughness:.04}),W-.03,1.22,vz,false);
+  K.bx(.01,.01,1.25,new THREE.MeshStandardMaterial({emissive:0xffd9a0,emissiveIntensity:2}),W-.45,.42,vz,false);
+  K.windowL(.01,1.74,1.35,.96,.56);
+  const ring=K.add(new THREE.TorusGeometry(.16,.008,8,40),M.black,[.02,1.25,2.05]);ring.rotation.y=Math.PI/2;K.bx(.03,.4,.14,M.linen,.035,.85,2.05);
+  K.bx(.36,.42,.3,M.wood,2.35,0,.45);K.plant(2.4,.45,.8);
+  K.hemi();K.sun([-2.2,3.6,1.5],[1.5,0,1.1],1.15,2.5);K.pt([1.5,H-.15,1.2],.55);K.pt([W-.4,1.6,vz],.45,2.2,0xffd9a0);K.pt([1.1,H-.2,.4],.3,3,0xffe0b0)},
+ sala(K,R){const{W,D,H}=R,M=K.M;K.shell(W,D,H);
+  K.bx(2.6,.42,.45,M.wood,2.6,.22,.23);K.bx(1.7,.96,.05,M.black,2.6,1.05,.04);K.bx(1.62,.9,.01,new THREE.MeshStandardMaterial({color:0x0d1013,roughness:.15,metalness:.5}),2.6,1.08,.07,false);
+  K.bx(3.2,.012,2.3,M.rug,2.6,0,2.45,false);
+  K.bx(2.7,.42,.95,M.fabric,2.6,0,3.55);K.bx(2.7,.46,.22,M.fabric,2.6,.42,3.93);K.bx(.2,.24,.95,M.fabric,1.35,.42,3.55);K.bx(.2,.24,.95,M.fabric,3.85,.42,3.55);
+  for(const x of [1.95,2.6,3.25])K.bx(.62,.12,.72,M.fabricL,x,.42,3.45);for(const x of [1.9,3.3])K.bx(.42,.38,.12,M.clay,x,.54,3.78);
+  K.add(new THREE.CylinderGeometry(.5,.5,.05,48),M.wood,[2.6,.36,2.25]);K.add(new THREE.CylinderGeometry(.18,.24,.33,32),M.graphite,[2.6,.17,2.25]);
+  K.bx(.8,.4,.8,M.clay,.85,0,2.1);K.bx(.16,.42,.8,M.clay,.53,.4,2.1);
+  K.add(new THREE.CylinderGeometry(.012,.012,1.55,10),M.black,[.45,.78,3.95]);K.add(new THREE.CylinderGeometry(.16,.2,.26,32,1,true),M.glow,[.45,1.62,3.95],false);
+  K.plant(4.75,.55,1.5);K.plant(.5,.45,1.1);
+  K.windowL(.01,1.0,2.3,2.4,1.7);
+  for(const [x,z] of [[1.3,1.2],[3.9,1.2],[1.3,3.2],[3.9,3.2]])K.add(new THREE.CylinderGeometry(.06,.06,.01,20),M.glow,[x,H-.006,z],false);
+  K.hemi(.24);K.sun([-3,4.5,2.4],[2.6,0,2.2],1.2,4);K.pt([2.6,H-.2,1.6],.6,8);K.pt([.45,1.6,3.95],.4,3,0xffd9a0);K.pt([2.6,1.8,.6],.25,3)},
+ quarto(K,R){const{W,D,H}=R,M=K.M;K.shell(W,D,H);
+  K.bx(2.7,.012,2.7,M.rug,2.0,0,1.5,false);
+  K.bx(1.9,.75,.09,M.fabric,2.0,.28,.05);K.bx(1.7,.32,2.1,M.wood,2.0,0,1.12);K.bx(1.6,.22,2.0,M.linen,2.0,.32,1.12);K.bx(1.66,.07,1.3,M.fabricL,2.0,.54,1.5);K.bx(1.66,.05,.35,M.clay,2.0,.6,1.95);
+  K.bx(.62,.14,.36,M.linen,1.6,.54,.32);K.bx(.62,.14,.36,M.linen,2.4,.54,.32);
+  for(const x of [.72,3.28]){K.bx(.5,.45,.4,M.woodL,x,0,.22);K.add(new THREE.CylinderGeometry(.06,.09,.2,24),M.pot,[x,.55,.22]);K.add(new THREE.CylinderGeometry(.1,.14,.16,24,1,true),M.glow,[x,.73,.22],false)}
+  K.bx(1.2,.42,.4,M.wood,2.0,0,2.5);
+  K.bx(.6,2.4,1.6,M.woodL,W-.3,0,2.85);K.bx(.01,2.3,.02,M.black,W-.6,.05,2.85,false);
+  K.windowL(.01,.9,1.9,1.4,1.4);K.plant(.45,3.35,1.2);
+  K.hemi(.22);K.sun([-2.6,3.8,2],[2,0,1.6],1.1,3);K.pt([2,H-.15,1.8],.5,6);K.pt([.72,.8,.25],.35,2.5,0xffd9a0);K.pt([3.28,.8,.25],.35,2.5,0xffd9a0)},
+ cozinha(K,R){const{W,D,H}=R,M=K.M;K.shell(W,D,H);SIM3.objs.paredes.push(...SIM3.objs.destaque.splice(0));SIM3.objs.paredes.forEach(m=>m.userData.k='paredes');K.plane('destaque',3.4,.62,[1.9,1.3,.004],[0,0,0]);
+  K.bx(3.4,.1,.56,M.black,1.9,0,.31,false);K.bx(3.4,.86,.6,M.graphite,1.9,.1,.3);K.sbox('bancada',3.44,.04,.64,1.9,.96,.32);
+  K.bx(3.4,.7,.35,M.graphite,1.9,1.62,.175);K.bx(3.4,.01,.02,new THREE.MeshStandardMaterial({emissive:0xffd9a0,emissiveIntensity:2}),1.9,1.61,.33,false);
+  K.bx(.75,.02,.5,M.black,1.15,1.0,.32,false);K.bx(.6,.02,.42,new THREE.MeshStandardMaterial({color:0x1d1d1d,roughness:.2,metalness:.7}),2.65,1.0,.32,false);
+  const f=K.add(new THREE.CylinderGeometry(.012,.012,.36,12),M.black,[2.65,1.18,.1]);const fs=K.add(new THREE.TorusGeometry(.09,.012,8,20,Math.PI),M.black,[2.65,1.36,.19]);fs.rotation.y=Math.PI/2;
+  K.bx(.8,2.25,.66,M.steel,3.95,0,.33);K.bx(.02,.9,.02,M.black,3.6,1.0,.67,false);
+  K.bx(2.0,.86,.9,M.graphite,2.0,.06,2.05);K.bx(2.0,.06,.84,M.black,2.0,0,2.05,false);K.sbox('bancada',2.1,.04,1.0,2.0,.92,2.05);
+  for(const x of [1.4,2.0,2.6]){K.add(new THREE.CylinderGeometry(.19,.19,.05,32),M.woodL,[x,.72,2.85]);for(const a of [0,1,2,3])K.add(new THREE.CylinderGeometry(.012,.012,.7,8),M.black,[x+Math.cos(a*1.57+.78)*.13,.35,2.85+Math.sin(a*1.57+.78)*.13])}
+  for(const x of [1.4,2.0,2.6]){K.add(new THREE.CylinderGeometry(.004,.004,.9,6),M.black,[x,H-.45,2.05],false);const sh=K.add(new THREE.ConeGeometry(.13,.2,32,1,true),M.black,[x,1.85,2.05]);sh.material=M.black;K.add(new THREE.SphereGeometry(.05,16,12),M.glow,[x,1.79,2.05],false)}
+  K.windowL(.01,1.1,1.9,1.2,1.2);K.plant(.4,3.2,1.2);
+  K.hemi(.26);K.sun([-2.8,4,2],[2,0,1.5],1.1,3.5);K.pt([2.0,1.7,2.05],.55,4,0xffd9a0);K.pt([1.2,1.35,.45],.45,2.4,0xffe2b8);K.pt([2.8,1.35,.45],.45,2.4,0xffe2b8);K.pt([2.1,H-.2,1.4],.45,7)},
+ externa(K,R,scene){const M=K.M;const PX=[3,9],PZ=[3.5,6.5],PD=1.3;
+  scene.background=new THREE.Color(0xc7dbe8);scene.fog=new THREE.Fog(0xc7dbe8,22,45);
+  const sh=new THREE.Shape([[0,0],[12,0],[12,-10],[0,-10]].map(([x,y])=>new THREE.Vector2(x,y)));const hole=new THREE.Path([[PX[0],-PZ[0]],[PX[0],-PZ[1]],[PX[1],-PZ[1]],[PX[1],-PZ[0]]].map(([x,y])=>new THREE.Vector2(x,y)));sh.holes.push(hole);
+  const deck=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshStandardMaterial());deck.rotation.x=-Math.PI/2;K.surf('piso_ext',deck,{uvm:1});
+  const pw=PX[1]-PX[0],pd=PZ[1]-PZ[0];
+  K.plane('piscina',pw,PD,[ (PX[0]+PX[1])/2,-PD/2,PZ[0]],[0,0,0]);K.plane('piscina',pw,PD,[(PX[0]+PX[1])/2,-PD/2,PZ[1]],[0,Math.PI,0]);
+  K.plane('piscina',pd,PD,[PX[0],-PD/2,(PZ[0]+PZ[1])/2],[0,Math.PI/2,0]);K.plane('piscina',pd,PD,[PX[1],-PD/2,(PZ[0]+PZ[1])/2],[0,-Math.PI/2,0]);
+  K.plane('piscina',pw,pd,[(PX[0]+PX[1])/2,-PD,(PZ[0]+PZ[1])/2],[-Math.PI/2,0,0]);
+  const water=K.add(new THREE.PlaneGeometry(pw,pd),new THREE.MeshPhysicalMaterial({color:0x4fb8d6,transparent:true,opacity:.5,roughness:.04,metalness:.05,envMapIntensity:1.2,depthWrite:false}),[(PX[0]+PX[1])/2,-.12,(PZ[0]+PZ[1])/2],false);water.rotation.x=-Math.PI/2;water.receiveShadow=false;water.raycast=()=>{};
+  for(const [w,d,x,z] of [[pw+.3,.15,6,PZ[0]-.075],[pw+.3,.15,6,PZ[1]+.075],[.15,pd,PX[0]-.075,5],[.15,pd,PX[1]+.075,5]])K.bx(w,.03,d,M.stone,x,0,z);
+  K.plane('muro',12,2.4,[6,1.2,0],[0,0,0]);K.plane('muro',10,2.4,[0,1.2,5],[0,Math.PI/2,0]);
+  K.bx(12.2,.06,.22,M.stone,6.05,2.4,-.08);K.bx(.22,.06,10.2,M.stone,-.08,2.4,5.05);
+  for(const x of [7.3,8.4]){K.bx(.7,.32,1.9,M.white,x,0,7.9);const b=K.bx(.7,.06,.7,M.white,x,.3,7.15);b.rotation.x=-.7}
+  K.add(new THREE.CylinderGeometry(.03,.03,2.4,10),M.woodL,[11.1,1.2,6.8]);K.add(new THREE.ConeGeometry(1.0,.38,24,1,true),M.linen,[11.1,2.42,6.8]).material.side=THREE.DoubleSide;
+  for(const [x,z] of [[9.6,.6],[9.6,3.2],[11.6,.6],[11.6,3.2]])K.bx(.12,2.6,.12,M.woodL,x,0,z);for(let i=0;i<8;i++)K.bx(2.2,.08,.08,M.woodL,10.6,2.6,.6+i*.37);
+  K.bx(1.8,.4,.8,M.fabricL,10.6,0,1.4);K.bx(1.8,.4,.18,M.fabricL,10.6,.4,1.05);K.add(new THREE.CylinderGeometry(.3,.3,.4,24),M.woodL,[10.6,.2,2.5]);
+  for(const x of [1,2.6,4.2,7.8,9.4])K.plant(x,.45,1.6);for(const z of [2,4,6.5,8.5])K.plant(.45,z,1.6);
+  K.hemi(.38,0xdbe9f5,0x8a8174);const s=K.sun([9,12,13],[6,0,4],1.45,10);s.shadow.mapSize.set(2048,2048)}
+};
+
+function build3(box){const R=R3o(),{W,D,H}=R;const r=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+ r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputEncoding=THREE.sRGBEncoding;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=R.out?.72:.82;r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;
+ box.appendChild(r.domElement);const scene=new THREE.Scene();scene.background=new THREE.Color(0x1a1816);
+ const pm=new THREE.PMREMGenerator(r);scene.environment=pm.fromScene(new THREE.RoomEnvironment(),.04).texture;
+ const cam=new THREE.PerspectiveCamera(R.out?55:66,1,.05,80);
+ const ctl=new THREE.OrbitControls(cam,r.domElement);Object.assign(ctl,{enableDamping:true,dampingFactor:.08,enablePan:false,minDistance:.35,maxDistance:R.maxD,rotateSpeed:.55,zoomSpeed:.7,maxPolarAngle:Math.PI*(R.out?.47:.82),minPolarAngle:Math.PI*.12});
+ const O=SIM3.objs={};const K=kit(scene,O);BUILD[SIM3.room](K,R,scene);
  T3={r,scene,cam,ctl,dirty:1,anim:null,box};
- for(const k of ['destaque','paredes','piso','teto','cuba'])apply3(k);
- cam3('entrada',true);
+ for(const k of R.surfs)apply3(k);
+ cam3(Object.keys(R.cams)[0],true);
  const ro=new ResizeObserver(()=>{const w=box.clientWidth,h=box.clientHeight;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();T3.dirty=1});ro.observe(box);T3.ro=ro;
  ctl.addEventListener('change',()=>{T3.dirty=1;$('#hint3d')?.classList.add('off')});
- // toque numa superfície seleciona o tab
  let down=null;r.domElement.addEventListener('pointerdown',e=>down=[e.clientX,e.clientY]);
  r.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>6)return;const b=r.domElement.getBoundingClientRect();const v=new THREE.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1);const rc=new THREE.Raycaster();rc.setFromCamera(v,cam);
-  const tg=[...O.destaque,...O.paredes,...O.piso,...O.teto,SIM3.objs.cuba];const hit=rc.intersectObjects(scene.children,false)[0];if(!hit)return;const m=tg.includes(hit.object)?hit.object:null;if(!m)return;const k=m===SIM3.objs.cuba?'cuba':m.userData.k;SIM3.surf=k;SIM3.brand=null;drawCtl3();flash3(k);
+  const hit=rc.intersectObjects(scene.children,false)[0];if(!hit)return;const m=hit.object;const k=m===SIM3.objs.cuba?'cuba':m.userData&&m.userData.k;if(!k||!R.surfs.includes(k))return;SIM3.surf=k;SIM3.brand=null;drawCtl3();flash3(k);
   if(innerWidth<860)$('#stabs').scrollIntoView({behavior:'smooth',block:'nearest'})});
- $('#load3d').remove();
+ $('#load3d')?.remove();
+ const lim=R.out?{x:[-1.5,13.5],y:[.5,9],z:[.6,13]}:{x:[.12,W-.12],y:[.25,H-.12],z:[.12,D-.12]};
  const loop=()=>{if(!T3||!document.body.contains(r.domElement)){stop3();return}T3.raf=requestAnimationFrame(loop);
   if(T3.anim){const a=T3.anim;a.t=Math.min(1,a.t+.04);const e=1-Math.pow(1-a.t,3);cam.position.lerpVectors(a.p0,a.p1,e);ctl.target.lerpVectors(a.t0,a.t1,e);if(a.t>=1)T3.anim=null;T3.dirty=1}
-  ctl.update();const c=cam.position;c.x=Math.min(W-.12,Math.max(.12,c.x));c.y=Math.min(H-.12,Math.max(.25,c.y));c.z=Math.min(D-.12,Math.max(.12,c.z));
+  ctl.update();const c=cam.position;c.x=Math.min(lim.x[1],Math.max(lim.x[0],c.x));c.y=Math.min(lim.y[1],Math.max(lim.y[0],c.y));c.z=Math.min(lim.z[1],Math.max(lim.z[0],c.z));
   if(T3.dirty){r.render(scene,cam);T3.dirty=0}};loop()}
-const CAMS={entrada:[[2.2,1.6,2.48],[1.0,.85,.35]],banheira:[[1.95,1.35,1.95],[1.05,.5,.5]],bancada:[[1.2,1.45,1.6],[2.85,1.1,1.55]],teto:[[1.5,.9,1.8],[1.5,2.6,.9]]};
-function cam3(n,instant){if(!T3)return;const[p,t]=CAMS[n];const P1=new THREE.Vector3(...p),T1=new THREE.Vector3(...t);if(instant){T3.cam.position.copy(P1);T3.ctl.target.copy(T1);T3.ctl.update();T3.dirty=1;return}T3.anim={t:0,p0:T3.cam.position.clone(),p1:P1,t0:T3.ctl.target.clone(),t1:T1}}
+function cam3(n,instant){if(!T3)return;const[p,t]=R3o().cams[n];const P1=new THREE.Vector3(...p),T1=new THREE.Vector3(...t);if(instant){T3.cam.position.copy(P1);T3.ctl.target.copy(T1);T3.ctl.update();T3.dirty=1;return}T3.anim={t:0,p0:T3.cam.position.clone(),p1:P1,t0:T3.ctl.target.clone(),t1:T1}}
 function stop3(){if(!T3)return;cancelAnimationFrame(T3.raf);T3.ro?.disconnect();T3.r.dispose();T3.r.forceContextLoss?.();T3=null}
+function sim3Cards(){return `<div class="scgrid">${Object.entries(ROOMS).map(([k,r])=>`<a class="card" href="#/sim3d/${k}"><div class="ph" style="aspect-ratio:4/5"><img src="${I(r.img)}" alt=""><span class="tag clay">3D</span><span class="qa">Abrir em 3D</span></div><div class="meta"><div class="br">${r.surfs.map(x=>SURF_LBL[x]).join(' · ')}</div><h3 style="font-family:var(--serif);font-size:23px;font-weight:500">${r.h1.replace(' em 3D','')}</h3></div></a>`).join('')}</div>`}
 
 addEventListener('hashchange',route);route();renderCart();
 
